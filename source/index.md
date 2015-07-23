@@ -5,7 +5,8 @@ language_tabs:
   - javascript
 
 toc_footers:
-  - <a href='http://github.com/tripit/slate'>Documentation Powered by Slate</a>
+  - <a href='https://neti.am'>Project Website</a>
+  - <a href='https://github.com/netiam/netiam'>Github Repository</a>
 
 includes:
   - errors
@@ -34,7 +35,47 @@ Use `npm` to install `netiam` into your projects `package.json`.
 
 `npm i -S netiam`
 
+```bash
+npm i -S netiam
+```
+
+# Routes
+
+```js
+export default function(app) {
+  let router = express.Router()
+
+  router.get('/', function(req, res) {
+    res.redirect('/v1/docs')
+  })
+
+  users(router)
+
+  router.use('/docs', express.static(__dirname + '/../public/docs'))
+
+  app.use('/v1', router)
+  app.get('/', function(req, res) {
+    res.redirect('/v1/docs')
+  })
+}
+```
+
 # Middleware
+
+```js
+app.get(
+  '/users',
+  api()
+    .auth({collection: User})
+    .rest({collection: User})
+    .acl.res({
+      collection: User,
+      asserts: asserts.owner('_id')
+    })
+    .map.res({_id: 'id'})
+    .jsonapi({collection: User})
+)
+```
 
 # Plugins
 
