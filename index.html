@@ -13,7 +13,7 @@
 
       <script>
         $(function() {
-          setupLanguages(["js"]);
+          setupLanguages(["javascript"]);
         });
       </script>
   </head>
@@ -28,7 +28,7 @@
     <div class="tocify-wrapper">
       <img src="images/logo.png" />
         <div class="lang-selector">
-              <a href="#" data-language-name="js">js</a>
+              <a href="#" data-language-name="javascript">javascript</a>
         </div>
         <div class="search">
           <input type="text" class="search" id="input-search" placeholder="Search">
@@ -37,7 +37,8 @@
       <div id="toc">
       </div>
         <ul class="toc-footer">
-            <li><a href='http://github.com/tripit/slate'>Documentation Powered by Slate</a></li>
+            <li><a href='https://neti.am'>Project Website</a></li>
+            <li><a href='https://github.com/netiam/netiam'>Github Repository</a></li>
         </ul>
     </div>
     <div class="page-wrapper">
@@ -63,102 +64,516 @@ and you should be able to use it with any compatible infrastructure
 
 <p><code class="prettyprint">npm i -S netiam</code></p>
 
+<blockquote>
+<p>npm install</p>
+</blockquote>
+<pre class="highlight shell"><code>npm i -S netiam
+</code></pre>
+
+<h1 id="routes">Routes</h1>
+<pre class="highlight javascript"><code><span class="kr">export</span> <span class="k">default</span> <span class="kd">function</span><span class="p">(</span><span class="nx">app</span><span class="p">)</span> <span class="p">{</span>
+  <span class="kd">let</span> <span class="nx">router</span> <span class="o">=</span> <span class="nx">express</span><span class="p">.</span><span class="nx">Router</span><span class="p">()</span>
+
+  <span class="nx">users</span><span class="p">(</span><span class="nx">router</span><span class="p">)</span>
+
+  <span class="nx">app</span><span class="p">.</span><span class="nx">use</span><span class="p">(</span><span class="s1">'/v1'</span><span class="p">,</span> <span class="nx">router</span><span class="p">)</span>
+<span class="p">}</span>
+</code></pre>
+
+<p>In order to follow <a href="https://github.com/tfredrich/RestApiTutorial.com/raw/master/media/RESTful%20Best%20Practices-v1_2.pdf">RESTful best practices</a>,
+it is recommended that you prefix your endpoints with a version part.</p>
+
 <h1 id="middleware">Middleware</h1>
+<pre class="highlight javascript"><code><span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span>
+  <span class="s1">'/users'</span><span class="p">,</span>
+  <span class="nx">api</span><span class="p">()</span>
+    <span class="p">.</span><span class="nx">auth</span><span class="p">({</span><span class="na">collection</span><span class="p">:</span> <span class="nx">User</span><span class="p">})</span>
+    <span class="p">.</span><span class="nx">rest</span><span class="p">({</span><span class="na">collection</span><span class="p">:</span> <span class="nx">User</span><span class="p">})</span>
+    <span class="p">.</span><span class="nx">acl</span><span class="p">.</span><span class="nx">res</span><span class="p">({</span>
+      <span class="na">collection</span><span class="p">:</span> <span class="nx">User</span><span class="p">,</span>
+      <span class="na">asserts</span><span class="p">:</span> <span class="nx">asserts</span><span class="p">.</span><span class="nx">owner</span><span class="p">(</span><span class="s1">'_id'</span><span class="p">)</span>
+    <span class="p">})</span>
+    <span class="p">.</span><span class="nx">map</span><span class="p">.</span><span class="nx">res</span><span class="p">({</span><span class="na">_id</span><span class="p">:</span> <span class="s1">'id'</span><span class="p">})</span>
+    <span class="p">.</span><span class="nx">jsonapi</span><span class="p">({</span><span class="na">collection</span><span class="p">:</span> <span class="nx">User</span><span class="p">})</span>
+<span class="p">)</span>
+</code></pre>
+
+<p>The <code class="prettyprint">netiam</code> API middleware is working just as any other <code class="prettyprint">connect</code> middleware
+you have might used in the past. The example shows you, how it can be used
+together with <code class="prettyprint">express</code>.</p>
 
 <h1 id="plugins">Plugins</h1>
 
+<h2 id="anatomy-of-a-plugin">Anatomy of a plugin</h2>
+
+<p>There are different types of plugins but they all share the same anatomy.
+A plugin has a <code class="prettyprint">construction</code> part and a <code class="prettyprint">dispatch</code> function.</p>
+
+<blockquote>
+<p>Anatomy of a plugin</p>
+</blockquote>
+<pre class="highlight javascript"><code><span class="kd">function</span> <span class="nx">myPlugin</span><span class="p">(</span><span class="nx">spec</span><span class="p">)</span> <span class="p">{</span>
+  <span class="c1">// …do your setup stuff here</span>
+
+  <span class="k">return</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// dispatch</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre>
+
+<h2 id="register-custom-plugin">Register custom plugin</h2>
+
+<p>If you want to create your own plugin, you have to register it, so that the
+dispatcher can put it on an endpoints stack.</p>
+
+<blockquote>
+<p>Register custom plugin</p>
+</blockquote>
+<pre class="highlight javascript"><code><span class="kr">import</span> <span class="nx">plugins</span> <span class="nx">from</span> <span class="s1">'netiam/plugins'</span>
+<span class="kr">import</span> <span class="nx">myplugin</span> <span class="nx">from</span> <span class="s1">'./myplugin'</span>
+
+<span class="nx">plugins</span><span class="p">.</span><span class="nx">register</span><span class="p">(</span><span class="nx">myplugin</span><span class="p">,</span> <span class="s1">'myplugin'</span><span class="p">)</span>
+</code></pre>
+
+<p>Be aware of the fact, that you must register the plugin before you can use it
+on any endpoint (e.g. main.js).</p>
+
+<h2 id="dual-purpose-plugin">Dual purpose plugin</h2>
+
+<p>There is one more category of plugins, those who work on the <code class="prettyprint">request</code> and on
+the <code class="prettyprint">response</code> part of a full HTTP request/response loop. The <code class="prettyprint">acl</code> plugin is
+of this type. Basically, this is just for convenience. Someone might create two
+different plugins, one that filters input and a second one which filters the
+output. But as those tasks are similar and commonly used together, you might
+want to pack it into a file.</p>
+
+<blockquote>
+<p>Export from a req/res plugin</p>
+</blockquote>
+<pre class="highlight javascript"><code><span class="c1">// Return an object with 2 methods</span>
+<span class="kr">export</span> <span class="k">default</span> <span class="nb">Object</span><span class="p">.</span><span class="nx">freeze</span><span class="p">({</span>
+  <span class="na">req</span><span class="p">:</span> <span class="nx">request</span><span class="p">,</span>
+  <span class="na">res</span><span class="p">:</span> <span class="nx">response</span>
+<span class="p">})</span>
+</code></pre>
+
 <h2 id="acl">ACL</h2>
+
+<aside class="warning">
+You should never use the <code>acl</code> plugin without the <code>auth</code> plugin. All requests
+will be treated as the user is of role <code>GUEST</code>. This might result in unexpected
+behavior.
+</aside>
+
+<blockquote>
+<p>The <code class="prettyprint">acl</code> middleware</p>
+</blockquote>
+<pre class="highlight javascript"><code><span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span>
+  <span class="s1">'/users'</span><span class="p">,</span>
+  <span class="nx">api</span><span class="p">()</span>
+    <span class="p">.</span><span class="nx">auth</span><span class="p">({</span><span class="na">collection</span><span class="p">:</span> <span class="nx">User</span><span class="p">})</span>
+    <span class="p">.</span><span class="nx">rest</span><span class="p">({</span><span class="na">collection</span><span class="p">:</span> <span class="nx">User</span><span class="p">})</span>
+    <span class="p">.</span><span class="nx">acl</span><span class="p">.</span><span class="nx">res</span><span class="p">({</span>
+      <span class="na">settings</span><span class="p">:</span> <span class="nx">require</span><span class="p">(</span><span class="s1">'./users.acl'</span><span class="p">)</span>
+    <span class="p">})</span>
+    <span class="p">.</span><span class="nx">jsonapi</span><span class="p">({</span><span class="na">collection</span><span class="p">:</span> <span class="nx">User</span><span class="p">})</span>
+<span class="p">)</span>
+</code></pre>
+
+<p>The ACL plugin is a <code class="prettyprint">dual purpose</code> plugin. It allows you to filter the input and
+output of a resource endpoint. You can use this to set fine-grained permissions
+for your users and resources.</p>
+
+<h3 id="acl-settings">ACL Settings</h3>
+
+<p>In order to get this plugin working, you must provide a <code class="prettyprint">settings</code> option which
+must contain a valid ACL object.</p>
+
+<blockquote>
+<p>ACL settings on resource and fields level</p>
+</blockquote>
+<pre class="highlight javascript"><code><span class="kr">export</span> <span class="k">default</span> <span class="p">{</span>
+  <span class="s1">'resource'</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s1">'ALLOW'</span><span class="p">:</span> <span class="p">{</span>
+      <span class="s1">'ADMIN'</span><span class="p">:</span> <span class="s1">'CRUD'</span><span class="p">,</span>
+      <span class="s1">'USER'</span><span class="p">:</span> <span class="s1">'R'</span><span class="p">,</span>
+      <span class="s1">'GUEST'</span><span class="p">:</span> <span class="s1">'R'</span>
+    <span class="p">}</span>
+  <span class="p">},</span>
+  <span class="s1">'fields'</span><span class="err">:</span> <span class="p">{</span>
+    <span class="s1">'*'</span><span class="err">:</span> <span class="p">{</span>
+      <span class="s1">'ALLOW'</span><span class="err">:</span> <span class="p">{</span>
+        <span class="s1">'ADMIN'</span><span class="err">:</span> <span class="s1">'CRUD'</span>
+      <span class="p">}</span>
+    <span class="p">},</span>
+    <span class="s1">'password'</span><span class="err">:</span> <span class="p">{</span>
+      <span class="s1">'ALLOW'</span><span class="err">:</span> <span class="p">{</span>
+        <span class="s1">'OWNER'</span><span class="err">:</span> <span class="s1">'U'</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre>
+
+<h3 id="nesting">Nesting</h3>
+
+<p>ACL settings do support nesting of resources. If you expand a path of a resource
+with the <code class="prettyprint">expand</code> query parameter (<code class="prettyprint">?expand=path</code>), you should filter the
+nested path too. You can simply reuse existing ACL settings by referencing to
+them. The following example shows how you can use ACL on a user resource with
+a nested <code class="prettyprint">projects</code> path.</p>
+
+<blockquote>
+<p>Referencing projects ACL settings on users <code class="prettyprint">project</code> path.</p>
+</blockquote>
+<pre class="highlight javascript"><code><span class="kr">import</span> <span class="nx">projects</span> <span class="nx">from</span> <span class="s1">'./projects.acl.js'</span>
+
+<span class="kr">export</span> <span class="k">default</span> <span class="p">{</span>
+  <span class="s1">'fields'</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s1">'*'</span><span class="p">:</span> <span class="p">{</span>
+      <span class="s1">'ALLOW'</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">'ADMIN'</span><span class="p">:</span> <span class="s1">'CRUD'</span>
+      <span class="p">}</span>
+    <span class="p">},</span>
+    <span class="s1">'projects'</span><span class="err">:</span> <span class="p">{</span>
+      <span class="s1">'ALLOW'</span><span class="err">:</span> <span class="p">{</span>
+        <span class="s1">'OWNER'</span><span class="err">:</span> <span class="s1">'U'</span>
+      <span class="p">},</span>
+      <span class="s1">'ref'</span><span class="err">:</span> <span class="nx">projects</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre>
+
+<h3 id="asserts">Asserts</h3>
+
+<p>At the moment, there is only support for an <code class="prettyprint">owner</code> assertion but more are
+planned to come (and for sure you can register your own plugins). Assertions
+might be configured through the ACL settings file but some (especially those
+working on resource level) might just accept global parameters.</p>
+
+<blockquote>
+<p>Sets a single option for the <code class="prettyprint">owner</code> assert</p>
+</blockquote>
+<pre class="highlight javascript"><code><span class="kr">export</span> <span class="k">default</span> <span class="p">{</span>
+  <span class="s1">'asserts'</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s1">'owner'</span><span class="p">:</span> <span class="s1">'_id'</span>
+  <span class="p">},</span>
+  <span class="err">…</span>
+<span class="p">}</span>
+</code></pre>
 
 <h2 id="auth">Auth</h2>
 
-<h2 id="cache">Cache</h2>
+<p>This plugin provides a authentication and authorization service on top of
+<a href="http://passportjs.org/">passportjs</a>.</p>
 
-<h2 id="client">Client</h2>
+<blockquote>
+<p>The <code class="prettyprint">auth</code> middleware</p>
+</blockquote>
+<pre class="highlight javascript"><code><span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span>
+  <span class="s1">'/users/:id'</span><span class="p">,</span>
+  <span class="nx">api</span><span class="p">()</span>
+    <span class="p">.</span><span class="nx">auth</span><span class="p">({</span><span class="na">collection</span><span class="p">:</span> <span class="nx">User</span><span class="p">})</span>
+    <span class="err">…</span>
+</code></pre>
 
 <h2 id="data">Data</h2>
 
-<h2 id="graph">Graph</h2>
+<p>You can use this to return custom any data as response to the client without
+the need of using the REST middleware.</p>
+
+<blockquote>
+<p>The <code class="prettyprint">data</code> middleware</p>
+</blockquote>
+<pre class="highlight javascript"><code><span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span>
+  <span class="s1">'/data'</span><span class="p">,</span>
+  <span class="nx">api</span><span class="p">()</span>
+    <span class="p">.</span><span class="nx">data</span><span class="p">({</span><span class="s1">'Hello'</span><span class="p">:</span> <span class="s1">'World'</span><span class="p">})</span>
+    <span class="p">.</span><span class="nx">json</span><span class="p">()</span>
+</code></pre>
 
 <h2 id="json">JSON</h2>
 
+<p>You can use this middleware to return data in <code class="prettyprint">res.body</code> as JSON to the client.</p>
+
+<blockquote>
+<p>Return a specific user as JSON object</p>
+</blockquote>
+<pre class="highlight javascript"><code><span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span>
+    <span class="s1">'/users/:id'</span><span class="p">,</span>
+    <span class="nx">api</span><span class="p">()</span>
+      <span class="p">.</span><span class="nx">rest</span><span class="p">({</span><span class="na">collection</span><span class="p">:</span> <span class="nx">User</span><span class="p">})</span>
+      <span class="p">.</span><span class="nx">json</span><span class="p">()</span>
+  <span class="p">)</span>
+</code></pre>
+
 <h2 id="json-api">json:api</h2>
+
+<p>This plugin is a basic implementation of the <a href="http://jsonapi.org/">json:api</a>
+convention and returns your RESTful data in a more structured way.</p>
+
+<blockquote>
+<p>Returns a user in <code class="prettyprint">json:api</code> format</p>
+</blockquote>
+<pre class="highlight javascript"><code><span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span>
+    <span class="s1">'/users/:id'</span><span class="p">,</span>
+    <span class="nx">api</span><span class="p">()</span>
+      <span class="p">.</span><span class="nx">rest</span><span class="p">({</span><span class="na">collection</span><span class="p">:</span> <span class="nx">User</span><span class="p">})</span>
+      <span class="p">.</span><span class="nx">jsonapi</span><span class="p">({</span><span class="na">collection</span><span class="p">:</span> <span class="nx">User</span><span class="p">})</span>
+</code></pre>
+
+<p>At the moment, <code class="prettyprint">links</code> and <code class="prettyprint">data</code> properties are supported.</p>
+
+<blockquote>
+<p>Example <code class="prettyprint">json:api</code> response</p>
+</blockquote>
+<pre class="highlight plaintext"><code>{
+  "links": {
+    "self": "http://example.com/posts",
+    "next": "http://example.com/posts?page[offset]=2",
+    "last": "http://example.com/posts?page[offset]=10"
+  },
+  "data": [{
+    "type": "posts",
+    "id": "1",
+    "attributes": {
+      "title": "JSON API paints my bikeshed!"
+    }
+  ]
+}
+</code></pre>
 
 <h2 id="map">Map</h2>
 
+<aside class="notice">
+Consider the nested syntax as deprecated. This will change in the future.
+</aside>
+
+<blockquote>
+<p>The <code class="prettyprint">map</code> middleware</p>
+</blockquote>
+<pre class="highlight javascript"><code><span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span>
+    <span class="s1">'/users'</span><span class="p">,</span>
+    <span class="nx">api</span><span class="p">()</span>
+      <span class="p">.</span><span class="nx">rest</span><span class="p">({</span><span class="na">collection</span><span class="p">:</span> <span class="nx">User</span><span class="p">})</span>
+      <span class="p">.</span><span class="nx">map</span><span class="p">.</span><span class="nx">res</span><span class="p">({</span><span class="na">_id</span><span class="p">:</span> <span class="s1">'id'</span><span class="p">})</span>
+      <span class="p">.</span><span class="nx">json</span><span class="p">()</span>
+</code></pre>
+
+<p>This is a very useful plugin to transform output, based on simple mapping rules.
+Think of <code class="prettyprint">_id</code> field returned by <a href="https://www.mongodb.org/">MongoDB</a> documents.
+There is quite a chance that you want to transform it into <code class="prettyprint">id</code>.</p>
+
+<p>This settings would transform all occurences of the <code class="prettyprint">_id</code> field from <code class="prettyprint">_id</code> to <code class="prettyprint">id</code>. </p>
+<pre class="highlight javascript"><code><span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span>
+  <span class="s1">'/users'</span><span class="p">,</span>
+  <span class="nx">api</span><span class="p">()</span>
+    <span class="p">.</span><span class="nx">rest</span><span class="p">({</span><span class="na">collection</span><span class="p">:</span> <span class="nx">User</span><span class="p">})</span>
+    <span class="p">.</span><span class="nx">map</span><span class="p">.</span><span class="nx">res</span><span class="p">({</span><span class="na">_id</span><span class="p">:</span> <span class="s1">'id'</span><span class="p">},</span> <span class="p">{</span><span class="na">expand</span><span class="p">:</span> <span class="p">{</span><span class="na">campaigns</span><span class="p">:</span> <span class="p">{</span><span class="na">_id</span><span class="p">:</span> <span class="s1">'id'</span><span class="p">}}})</span>
+    <span class="p">.</span><span class="nx">json</span><span class="p">()</span>
+<span class="p">)</span>
+</code></pre>
+
+<h3 id="nested">Nested</h3>
+
+<p>This plugin does also support nested mapping via the <code class="prettyprint">expand</code> parameter.</p>
+
+<p>It will also transform the nested <code class="prettyprint">_id</code> fields if the <code class="prettyprint">campaigns</code> path has been
+expanded.</p>
+
 <h2 id="merge">Merge</h2>
 
-<h2 id="profile">Profile</h2>
+<aside class="warning">
+Use with care. This might result in dozens or hundreds of queries. It is also
+prone to race conditions as MongoDB does not support transactions.
+</aside>
 
-<h2 id="render">Render</h2>
+<p>This is an advanced feature that should be used with care. The <code class="prettyprint">merge</code> plugin
+allows you to really <code class="prettyprint">merge</code> two referenced documents together.</p>
+
+<blockquote>
+<p>Example route</p>
+</blockquote>
+<pre class="highlight javascript"><code><span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span>
+  <span class="s1">'/users/:user/games'</span><span class="p">,</span>
+  <span class="nx">api</span><span class="p">()</span>
+    <span class="p">.</span><span class="nx">rest</span><span class="p">({</span><span class="na">collection</span><span class="p">:</span> <span class="nx">UserGame</span><span class="p">})</span>
+    <span class="p">.</span><span class="nx">merge</span><span class="p">({</span>
+      <span class="na">collection</span><span class="p">:</span> <span class="nx">Game</span><span class="p">,</span>
+      <span class="na">refField</span><span class="p">:</span> <span class="s1">'game'</span>
+    <span class="p">})</span>
+    <span class="p">.</span><span class="nx">json</span><span class="p">()</span>
+<span class="p">)</span>
+</code></pre>
+
+<blockquote>
+<p>Example response</p>
+</blockquote>
+<pre class="highlight javascript"><code><span class="p">[</span>
+  <span class="p">{</span>
+    <span class="s2">"score"</span><span class="p">:</span> <span class="mi">1230550</span><span class="p">,</span> <span class="c1">// &lt;- this is from the UserGame resource </span>
+    <span class="s2">"name"</span><span class="p">:</span> <span class="s2">"my-super-game"</span> <span class="c1">// &lt;- this from the Game resource</span>
+  <span class="p">}</span>
+<span class="p">]</span>
+</code></pre>
+
+<h3 id="example">Example</h3>
+
+<p>Think of a document of type <code class="prettyprint">game</code>. Every user that is playing the game wants
+to save the score to the specific game object, but as an API developer you know
+that you should separate <code class="prettyprint">state</code> from <code class="prettyprint">structure</code>. As the game is played as
+app on a mobile phone, you want to give the app developer all the data within
+one request.</p>
+
+<p>Merge precedence is original resource over merged resource. In this case and if
+you have two <code class="prettyprint">_id</code> fields that would be merged, the <code class="prettyprint">UserGame</code> <code class="prettyprint">_id</code> would be
+the one in the response object.</p>
 
 <h2 id="rest">REST</h2>
 
-<h2 id="state">State</h2>
+<aside class="warning">
+The <code>rest</code> plugin depends on MongoDB and Mongoose at the moment.
+The plan for this library  is to be independent from the storage engine and type
+of database. Consider everything returned by this plugin as plain JavaScript
+object.
+</aside>
 
-<h2 id="transform">Transform</h2>
+<blockquote>
+<p>Basic usage of <code class="prettyprint">rest</code> middleware</p>
+</blockquote>
+<pre class="highlight javascript"><code><span class="nx">api</span><span class="p">()</span>
+  <span class="p">.</span><span class="nx">rest</span><span class="p">({</span><span class="na">collection</span><span class="p">:</span> <span class="nx">User</span><span class="p">})</span>
+</code></pre>
 
-          <h1 id="errors">Errors</h1>
-
-<aside class="notice">This error section is stored in a separate file in `includes/_errors.md`. Slate allows you to optionally separate out your docs into many files&hellip;just save them to the `includes` folder and add them to the top of your `index.md`&rsquo;s frontmatter. Files are included in the order listed.</aside>
-
-<p>The Kittn API uses the following error codes:</p>
+<p>The <code class="prettyprint">rest</code> plugin is a <code class="prettyprint">CRUD</code> implementation <strong>close</strong> the REST specification.
+It checks the HTTP verb used for a request and calls the right function on the
+input or output data.</p>
 
 <table><thead>
 <tr>
-<th>Error Code</th>
-<th>Meaning</th>
+<th style="text-align: right">Verb</th>
+<th>Endpoint</th>
+<th>Action</th>
 </tr>
 </thead><tbody>
 <tr>
-<td>400</td>
-<td>Bad Request &ndash; Your request sucks</td>
+<td style="text-align: right"><code class="prettyprint">GET</code></td>
+<td><em>/documents/:id</em></td>
+<td>fetch a single document</td>
 </tr>
 <tr>
-<td>401</td>
-<td>Unauthorized &ndash; Your API key is wrong</td>
+<td style="text-align: right"><code class="prettyprint">GET</code></td>
+<td><em>/documents</em></td>
+<td>fetch all documents from endpoint</td>
 </tr>
 <tr>
-<td>403</td>
-<td>Forbidden &ndash; The kitten requested is hidden for administrators only</td>
+<td style="text-align: right"><code class="prettyprint">POST</code></td>
+<td><em>/documents</em></td>
+<td>create a new document</td>
 </tr>
 <tr>
-<td>404</td>
-<td>Not Found &ndash; The specified kitten could not be found</td>
+<td style="text-align: right"><code class="prettyprint">PUT</code></td>
+<td><em>/documents/:id</em></td>
+<td>update an existing document</td>
 </tr>
 <tr>
-<td>405</td>
-<td>Method Not Allowed &ndash; You tried to access a kitten with an invalid method</td>
-</tr>
-<tr>
-<td>406</td>
-<td>Not Acceptable &ndash; You requested a format that isn&rsquo;t json</td>
-</tr>
-<tr>
-<td>410</td>
-<td>Gone &ndash; The kitten requested has been removed from our servers</td>
-</tr>
-<tr>
-<td>418</td>
-<td>I&rsquo;m a teapot</td>
-</tr>
-<tr>
-<td>429</td>
-<td>Too Many Requests &ndash; You&rsquo;re requesting too many kittens! Slow down!</td>
-</tr>
-<tr>
-<td>500</td>
-<td>Internal Server Error &ndash; We had a problem with our server. Try again later.</td>
-</tr>
-<tr>
-<td>503</td>
-<td>Service Unavailable &ndash; We&rsquo;re temporarially offline for maintanance. Please try again later.</td>
+<td style="text-align: right"><code class="prettyprint">DELETE</code></td>
+<td><em>/documents/:id</em></td>
+<td>delete a specific document</td>
 </tr>
 </tbody></table>
+
+<h3 id="on-subresources">On subresources</h3>
+<pre class="highlight javascript"><code><span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span>
+    <span class="s1">'/users/:user/projects'</span><span class="p">,</span>
+    <span class="nx">api</span><span class="p">()</span>
+      <span class="p">.</span><span class="nx">rest</span><span class="p">({</span>
+        <span class="na">collection</span><span class="p">:</span> <span class="nx">Projects</span>
+        <span class="na">map</span><span class="p">:</span> <span class="p">{</span><span class="s1">'owner'</span><span class="p">:</span> <span class="s1">':user'</span><span class="p">}</span>
+      <span class="p">})</span>
+      <span class="p">.</span><span class="nx">json</span><span class="p">()</span>
+</code></pre>
+
+<p>The plugin does also work on subresources. You only have to map the <code class="prettyprint">route</code>
+parameter to a field which identifies the subresource as child of the resource.</p>
+
+<p>In this example, the projects collection is expected to have an <code class="prettyprint">ownership</code> field
+which must be set to the same value as the route parameter <code class="prettyprint">:user</code>.</p>
+
+<h3 id="one-to-many-and-many-to-one-relationships">One-to-many and many-to-one relationships</h3>
+
+<aside class="notice">
+The usage of the words <code>ONE_TO_MANY</code> and <code>MANY_TO_ONE</code> is
+ambiguous and will be fixed in a future release.
+</aside>
+
+<p>This example is also a good example for a one-to-many relationship. One user can
+have many projects.</p>
+<pre class="highlight javascript"><code><span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span>
+    <span class="s1">'/users/:user/projects'</span><span class="p">,</span>
+    <span class="nx">api</span><span class="p">()</span>
+      <span class="p">.</span><span class="nx">rest</span><span class="p">({</span>
+        <span class="na">collection</span><span class="p">:</span> <span class="nx">User</span><span class="p">,</span>
+        <span class="na">relationship</span><span class="p">:</span> <span class="nx">Resource</span><span class="p">.</span><span class="nx">MANY_TO_ONE</span><span class="p">,</span>
+        <span class="na">relationshipField</span><span class="p">:</span> <span class="s1">'projects'</span><span class="p">,</span>
+        <span class="na">relationshipCollection</span><span class="p">:</span> <span class="nx">Project</span><span class="p">,</span>
+        <span class="na">map</span><span class="p">:</span> <span class="p">{</span><span class="s1">'_id'</span><span class="p">:</span> <span class="s1">':user'</span><span class="p">}</span>
+      <span class="p">})</span>
+      <span class="p">.</span><span class="nx">json</span><span class="p">()</span>
+  <span class="p">)</span>
+</code></pre>
+
+<p>It might also happen, that you don&rsquo;t want to store the relationship in every
+child but you might just wanna maintain an array with documents in your main
+resource. The <code class="prettyprint">rest</code> plugin allows you to handle this scenario too.</p>
+
+<h2 id="transform">Transform</h2>
+<pre class="highlight r"><code><span class="n">app.get</span><span class="p">(</span>
+  <span class="s1">'/users'</span><span class="p">,</span>
+  <span class="n">api</span><span class="p">()</span>
+    <span class="n">.rest</span><span class="p">({</span><span class="n">collection</span><span class="o">:</span> <span class="n">User</span><span class="p">})</span>
+    <span class="n">.transform</span><span class="p">((</span><span class="n">req</span><span class="p">,</span> <span class="n">res</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">{</span>
+      <span class="n">res.body</span> <span class="o">=</span> <span class="n">res.body.map</span><span class="p">(</span><span class="n">niceMapFunction</span><span class="p">)</span>
+    <span class="p">})</span>
+    <span class="n">.json</span><span class="p">()</span>
+</code></pre>
+
+<p>You can use this plugin to apply custom transformation on your response. This
+is also a good starting point for developing your custom plugin logic as it
+can be used to test program logic on actual output.</p>
+
+<h2 id="but-there-is-more…">But, there is more…</h2>
+
+<p>There are more plugins in the library but those are not ready to use or might
+be removed in the future.</p>
+
+          <h1 id="es2015">ES2015</h1>
+
+<p>This library uses ES2015 syntax and in some places ES7 syntax too (async/await).
+Be aware that this library is compiled into ES5 comaptible JavaScript code
+before it is deployed as npm package.</p>
+
+<p>The documentation might always use ES2015 syntax. If you plan to use the library
+within another Babel project, you should consider using the <code class="prettyprint">babel-runtime</code> as
+it is already required by the <code class="prettyprint">netiam</code> package.</p>
+
+<h2 id="compiler">Compiler</h2>
+
+<blockquote>
+<p>Babel compiler settings</p>
+</blockquote>
+<pre class="highlight javascript"><code><span class="nx">options</span><span class="err">:</span> <span class="p">{</span>
+  <span class="nl">stage</span><span class="p">:</span> <span class="mi">1</span>
+<span class="p">}</span>
+</code></pre>
+
+<p>The compiler used is <a href="https://babeljs.io/">Babel</a> with the following settings.</p>
 
       </div>
       <div class="dark-box">
           <div class="lang-selector">
-                <a href="#" data-language-name="js">js</a>
+                <a href="#" data-language-name="javascript">javascript</a>
           </div>
       </div>
     </div>
